@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UniFi Network AI Agent</title>
+    <!-- Importar tipografía moderna de Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* ============================================================================
+           SISTEMA DE DISEÑO CSS PREMIUM (HSL & GLASSMORPHISM)
+           ============================================================================ */
+        :root {
+            --bg-base: #0b0f19;
+            --bg-surface: rgba(18, 26, 47, 0.75);
+            --bg-card: rgba(30, 41, 69, 0.45);
+            --primary: #0070f3;
+            --primary-hover: #0051a8;
+            --accent: #00d2ff;
+            --success: #00e676;
+            --warning: #ffb300;
+            --danger: #ff1744;
+            --text-main: #f5f6fa;
+            --text-muted: #8a99ad;
+            --border: rgba(255, 255, 255, 0.08);
+            --radius-lg: 16px;
+            --radius-md: 10px;
+            --shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            --font: 'Outfit', sans-serif;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: var(--font);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            background-color: var(--bg-base);
+            background-image: 
+                radial-gradient(at 10% 10%, rgba(0, 112, 243, 0.15) 0px, transparent 40%),
+                radial-gradient(at 90% 90%, rgba(0, 210, 255, 0.12) 0px, transparent 40%);
+            background-attachment: fixed;
+            color: var(--text-main);
+            min-height: 100vh;
+            padding: 2rem;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* --- HEADER & BRANDING --- */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem 2rem;
+            background: var(--bg-surface);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+            margin-bottom: 2rem;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo-section h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #fff 30%, var(--accent) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .logo-section p {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .btn-diagnose {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: white;
+            border: none;
+            padding: 0.8rem 1.8rem;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            box-shadow: 0 4px 15px rgba(0, 112, 243, 0.3);
+            transition: var(--transition);
+        }
+
+        .btn-diagnose:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 112, 243, 0.5);
+        }
+
+        .btn-diagnose:active {
+            transform: translateY(0);
+        }
+
+        /* --- DASHBOARD LAYOUT & KPIS --- */
+        .kpis-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .kpi-card {
+            background: var(--bg-surface);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+        }
+
+        .kpi-card:hover {
+            border-color: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .kpi-info h3 {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .kpi-value {
+            font-size: 2.2rem;
+            font-weight: 700;
+        }
+
+        .kpi-icon {
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, var(--accent), var(--primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* --- MAIN CONTENT PANELS --- */
+        .panels-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 1024px) {
+            .panels-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background: var(--bg-surface);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            box-shadow: var(--shadow);
+            margin-bottom: 2rem;
+        }
+
+        .panel-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.8rem;
+        }
+
+        /* --- TABLA DISPOSITIVOS --- */
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th, td {
+            padding: 1rem 1.2rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            font-weight: 600;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        tbody tr:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .badge {
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .badge-success { background: rgba(0, 230, 118, 0.15); color: #00e676; }
+        .badge-warning { background: rgba(255, 179, 0, 0.15); color: #ffb300; }
+        .badge-danger { background: rgba(255, 23, 68, 0.15); color: #ff1744; }
+
+        .btn-action {
+            background: rgba(255, 23, 68, 0.1);
+            color: var(--danger);
+            border: 1px solid rgba(255, 23, 68, 0.2);
+            padding: 0.4rem 0.9rem;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .btn-action:hover {
+            background: var(--danger);
+            color: white;
+        }
+
+        /* --- MEJORES PRÁCTICAS --- */
+        .practices-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+        }
+
+        .practice-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 1.2rem;
+            transition: var(--transition);
+        }
+
+        .practice-card.no-compliance {
+            border-left: 4px solid var(--warning);
+        }
+
+        .practice-card.compliance {
+            border-left: 4px solid var(--success);
+        }
+
+        .practice-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.8rem;
+        }
+
+        .practice-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .practice-desc {
+            font-size: 0.92rem;
+            color: var(--text-muted);
+            margin-bottom: 0.8rem;
+        }
+
+        .btn-optimize {
+            background: rgba(0, 210, 255, 0.1);
+            color: var(--accent);
+            border: 1px solid rgba(0, 210, 255, 0.2);
+            padding: 0.4rem 1rem;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .btn-optimize:hover {
+            background: var(--accent);
+            color: var(--bg-base);
+        }
+
+        /* --- HISTORIAL Y RESUMEN GENERAL --- */
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .history-item {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .history-date {
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        /* --- MODAL CONFIRMACIÓN --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: var(--transition);
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal {
+            background: #121a2f;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            width: 90%;
+            max-width: 480px;
+            padding: 2rem;
+            box-shadow: var(--shadow);
+            transform: scale(0.9);
+            transition: var(--transition);
+        }
+
+        .modal-overlay.active .modal {
+            transform: scale(1);
+        }
+
+        .modal-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: white;
+        }
+
+        .modal-body {
+            font-size: 1rem;
+            color: var(--text-muted);
+            margin-bottom: 1.8rem;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+        }
+
+        .btn-cancel {
+            background: transparent;
+            color: white;
+            border: 1px solid var(--border);
+            padding: 0.6rem 1.2rem;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .btn-confirm {
+            background: var(--danger);
+            color: white;
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .btn-confirm.opt-mode {
+            background: var(--primary);
+        }
+
+        /* --- LOADING SPINNER --- */
+        .loader-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(11, 15, 25, 0.9);
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: var(--transition);
+        }
+
+        .loader-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .spinner {
+            width: 70px;
+            height: 70px;
+            border: 5px solid rgba(0, 112, 243, 0.1);
+            border-left-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1.5rem;
+        }
+
+        .loader-text {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: white;
+            text-align: center;
+        }
+
+        .loader-subtext {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+        }
+
+        @keyframes spin {
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- --- HEADER --- -->
+        <header>
+            <div class="logo-section">
+                <span style="font-size: 2.5rem;">🛜</span>
+                <div>
+                    <h1>UniFi Network AI Agent</h1>
+                    <p id="system-info">Controlador local UniFi OS · No conectado</p>
+                </div>
+            </div>
+            <button class="btn-diagnose" id="btn-diagnose">
+                <span>🔍</span> Ejecutar Diagnóstico IA
+            </button>
+        </header>
+
+        <!-- --- KPIS GRID --- -->
+        <div class="kpis-grid">
+            <div class="kpi-card">
+                <div class="kpi-info">
+                    <h3>Total Dispositivos</h3>
+                    <div class="kpi-value" id="kpi-devices">-</div>
+                </div>
+                <div class="kpi-icon">🖥️</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-info">
+                    <h3>Usuarios Activos</h3>
+                    <div class="kpi-value" id="kpi-users">-</div>
+                </div>
+                <div class="kpi-icon">👥</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-info">
+                    <h3>Alertas de Salud</h3>
+                    <div class="kpi-value" id="kpi-alerts">-</div>
+                </div>
+                <div class="kpi-icon">⚠️</div>
+            </div>
+        </div>
+
+        <!-- --- MAIN CONTENT PANELS --- -->
+        <div class="panels-grid">
+            <!-- Izquierda: Estado de Dispositivos y Recomendaciones -->
+            <div>
+                <!-- Panel de Dispositivos -->
+                <div class="panel">
+                    <div class="panel-title">🖥️ Estado de Puntos de Acceso y Switches</div>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Dispositivo</th>
+                                    <th>Tipo</th>
+                                    <th>Estado</th>
+                                    <th>Satisfacción</th>
+                                    <th>Usuarios</th>
+                                    <th>Acción (HITL)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="devices-tbody">
+                                <tr>
+                                    <td colspan="6" style="text-align: center; color: var(--text-muted);">
+                                        Por favor, haz clic en "Ejecutar Diagnóstico IA" para recopilar datos.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Panel de Mejores Prácticas -->
+                <div class="panel">
+                    <div class="panel-title">📐 Auditoría de Mejores Prácticas UniFi</div>
+                    <div class="practices-list" id="practices-list">
+                        <div style="text-align: center; color: var(--text-muted); padding: 1rem 0;">
+                            Ningún diagnóstico ejecutado aún.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Derecha: Historial y Observaciones -->
+            <div>
+                <!-- Panel Resumen General -->
+                <div class="panel">
+                    <div class="panel-title">📋 Diagnóstico de la IA</div>
+                    <div id="ai-summary" style="font-size: 0.98rem; color: var(--text-muted); line-height: 1.6;">
+                        El resumen general del diagnóstico e incidencias se mostrará aquí una vez ejecutado el análisis.
+                    </div>
+                </div>
+
+                <!-- Panel de Memoria Histórica -->
+                <div class="panel">
+                    <div class="panel-title">🧠 Memoria Histórica (Tendencias)</div>
+                    <div class="history-list" id="history-list">
+                        <!-- Historial se cargará dinámicamente -->
+                        <div style="text-align: center; color: var(--text-muted);">Cargando historial...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- --- CONFIRMACIÓN MODAL (HUMAN-IN-THE-LOOP) --- -->
+    <div class="modal-overlay" id="confirm-modal">
+        <div class="modal">
+            <div class="modal-title" id="modal-title">Confirmar acción en la red</div>
+            <div class="modal-body" id="modal-body">
+                ¿Estás seguro de que deseas enviar el comando de reinicio al dispositivo?
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" id="btn-modal-cancel">Cancelar</button>
+                <button class="btn-confirm" id="btn-modal-confirm">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- --- OVERLAY CARGANDO --- -->
+    <div class="loader-overlay" id="loader-overlay">
+        <div class="spinner"></div>
+        <div class="loader-text" id="loader-text">Conectando al controlador UniFi...</div>
+        <div class="loader-subtext" id="loader-subtext">Esto puede tardar entre 10 y 20 segundos.</div>
+    </div>
+
+    <!-- ============================================================================
+       FRONTEND LOGIC (VANILLA JS)
+       ============================================================================ -->
+    <script>
+        // Elementos del DOM
+        const btnDiagnose = document.getElementById('btn-diagnose');
+        const kpiDevices = document.getElementById('kpi-devices');
+        const kpiUsers = document.getElementById('kpi-users');
+        const kpiAlerts = document.getElementById('kpi-alerts');
+        const devicesTbody = document.getElementById('devices-tbody');
+        const practicesList = document.getElementById('practices-list');
+        const aiSummary = document.getElementById('ai-summary');
+        const historyList = document.getElementById('history-list');
+        const systemInfo = document.getElementById('system-info');
+
+        // Modal
+        const confirmModal = document.getElementById('confirm-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalBody = document.getElementById('modal-body');
+        const btnModalCancel = document.getElementById('btn-modal-cancel');
+        const btnModalConfirm = document.getElementById('btn-modal-confirm');
+
+        // Loader
+        const loaderOverlay = document.getElementById('loader-overlay');
+        const loaderText = document.getElementById('loader-text');
+        const loaderSubtext = document.getElementById('loader-subtext');
+
+        // Callback para la confirmación de la acción del modal
+        let modalConfirmCallback = null;
+
+        // Cargar datos iniciales (Historial)
+        document.addEventListener('DOMContentLoaded', () => {
+            actualizarHistorial();
+        });
+
+        // Evento botón diagnóstico
+        btnDiagnose.addEventListener('click', async () => {
+            mostrarLoader("Conectando al controlador UniFi...", "Recopilando métricas y configuraciones de red...");
+            
+            try {
+                const response = await fetch('/api/diagnosticar', { method: 'POST' });
+                const data = await response.json();
+                
+                if (response.ok && data.status === 'success') {
+                    renderizarDashboard(data);
+                    actualizarHistorial();
+                } else {
+                    alert(`Error en el diagnóstico: ${data.detail || 'Fallo desconocido'}`);
+                }
+            } catch (err) {
+                alert(`Error de conexión al backend: ${err.message}`);
+            } finally {
+                ocultarLoader();
+            }
+        });
+
+        // Cerrar modal
+        btnModalCancel.addEventListener('click', () => {
+            confirmModal.classList.remove('active');
+            modalConfirmCallback = null;
+        });
+
+        btnModalConfirm.addEventListener('click', () => {
+            if (modalConfirmCallback) {
+                modalConfirmCallback();
+            }
+            confirmModal.classList.remove('active');
+        });
+
+        // Mostrar Loader
+        function mostrarLoader(text, subtext) {
+            loaderText.innerText = text;
+            loaderSubtext.innerText = subtext;
+            loaderOverlay.classList.add('active');
+        }
+
+        // Ocultar Loader
+        function ocultarLoader() {
+            loaderOverlay.classList.remove('active');
+        }
+
+        // Obtener historial de SQLite
+        async function actualizarHistorial() {
+            try {
+                const response = await fetch('/api/historial');
+                const data = await response.json();
+                if (response.ok && data.status === 'success') {
+                    renderizarHistorial(data.historial);
+                }
+            } catch (err) {
+                console.error("Error al cargar el historial:", err);
+            }
+        }
+
+        // Renderizar Historial en el panel lateral
+        function renderizarHistorial(historial) {
+            if (!historial || historial.length === 0) {
+                historyList.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 1rem 0;">No hay análisis guardados.</div>`;
+                return;
+            }
+
+            historyList.innerHTML = '';
+            historial.forEach((item, index) => {
+                const date = new Date(item.timestamp.replace(' ', 'T'));
+                const dateStr = date.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+                
+                const card = document.createElement('div');
+                card.className = 'history-item';
+                card.innerHTML = `
+                    <div>
+                        <div class="history-date">${dateStr}</div>
+                        <div style="font-size: 0.82rem; color: var(--text-muted); margin-top: 0.2rem;">
+                            Usuarios: ${item.num_usuarios} · Alertas: ${item.num_problemas}
+                        </div>
+                    </div>
+                    <span class="badge ${item.num_problemas === 0 ? 'badge-success' : 'badge-warning'}">
+                        ${item.num_problemas === 0 ? 'Estable' : item.num_problemas + ' Alertas'}
+                    </span>
+                `;
+                
+                // Si es el primer elemento (el más reciente), actualizar cabecera del sistema
+                if (index === 0) {
+                    systemInfo.innerHTML = `Controlador UniFi OS · Última auditoría realizada`;
+                }
+
+                historyList.appendChild(card);
+            });
+        }
+
+        // Renderizar Dashboard con la respuesta del análisis
+        function renderizarDashboard(data) {
+            const metricas = data.metricas;
+            const diagnostico = data.diagnostico;
+
+            // 1. Configurar KPIs
+            kpiDevices.innerText = metricas.length;
+            kpiUsers.innerText = metricas.reduce((acc, curr) => acc + curr.num_usuarios, 0);
+            kpiAlerts.innerText = diagnostico.problemas_detectados.length;
+
+            // 2. Renderizar Resumen General
+            aiSummary.innerHTML = `
+                <p style="margin-bottom: 1rem; font-weight: 500; color: white;">${diagnostico.resumen_general}</p>
+                <div style="margin-top: 1rem;">
+                    <strong style="color: var(--warning); display: block; margin-bottom: 0.5rem;">Alertas detectadas:</strong>
+                    ${diagnostico.problemas_detectados.map(p => `• ${p}<br>`).join('') || 'Ninguna alerta activa.'}
+                </div>
+            `;
+
+            // 3. Renderizar Tabla de Dispositivos
+            devicesTbody.innerHTML = '';
+            metricas.forEach(dev => {
+                const tr = document.createElement('tr');
+                
+                // Badge de estado
+                let statusClass = 'badge-success';
+                if (dev.estado !== 'conectado') {
+                    statusClass = 'badge-danger';
+                }
+
+                // Satisfacción coloreada
+                let satClass = 'badge-success';
+                let satText = dev.satisfaccion;
+                if (typeof dev.satisfaccion === 'number') {
+                    satText = dev.satisfaccion + '%';
+                    if (dev.satisfaccion < 80) satClass = 'badge-warning';
+                    if (dev.satisfaccion < 50) satClass = 'badge-danger';
+                }
+
+                // ¿Requiere acción de reinicio sugerido por IA?
+                const sugeridoReboot = diagnostico.acciones_recomendadas.some(
+                    a => a.mac === dev.mac && a.accion.toLowerCase() === 'reiniciar'
+                );
+
+                const actionButton = sugeridoReboot
+                    ? `<button class="btn-action" onclick="confirmarReinicio('${dev.mac}', '${dev.nombre}')">🔄 Reiniciar</button>`
+                    : `<span style="font-size: 0.9rem; color: var(--text-muted);">Sin acción</span>`;
+
+                tr.innerHTML = `
+                    <td style="font-weight: 600; color: white;">${dev.nombre} <br><span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 400;">${dev.modelo} · ${dev.mac}</span></td>
+                    <td>${dev.tipo}</td>
+                    <td><span class="badge ${statusClass}">${dev.estado}</span></td>
+                    <td><span class="badge ${satClass}">${satText}</span></td>
+                    <td style="font-weight: 500;">${dev.num_usuarios}</td>
+                    <td>${actionButton}</td>
+                `;
+                devicesTbody.appendChild(tr);
+            });
+
+            // 4. Renderizar Auditoría de Mejores Prácticas
+            practicesList.innerHTML = '';
+            if (!diagnostico.mejores_practicas || diagnostico.mejores_practicas.length === 0) {
+                practicesList.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 1rem 0;">¡Excelente! La configuración cumple al 100% las mejores prácticas.</div>`;
+                return;
+            }
+
+            diagnostico.mejores_practicas.forEach(bp => {
+                const card = document.createElement('div');
+                card.className = `practice-card ${bp.cumple ? 'compliance' : 'no-compliance'}`;
+                
+                // Generar los botones dinámicos según todas las redes afectadas
+                const listButtons = generarBotonesOptimizacion(bp, data.configuraciones, bp.cumple);
+
+                let buttonsHtml = '';
+                if (listButtons.length > 0) {
+                    buttonsHtml = `<div style="display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 0.8rem;">`;
+                    listButtons.forEach(btnInfo => {
+                        if (!bp.cumple) {
+                            buttonsHtml += `<button class="btn-optimize" style="font-size: 0.82rem; padding: 0.4rem 0.9rem;" onclick="confirmarOptimizacion('${btnInfo.tipo}', '${btnInfo.nombre_red}', '${btnInfo.parametro}', ${btnInfo.valor}, '${bp.regla}')">${btnInfo.label}</button>`;
+                        } else {
+                            buttonsHtml += `<button class="btn-cancel" style="font-size: 0.8rem; padding: 0.35rem 0.8rem; border-color: rgba(255, 255, 255, 0.12); color: var(--text-muted);" onclick="confirmarReversion('${btnInfo.tipo}', '${btnInfo.nombre_red}', '${btnInfo.parametro}', ${btnInfo.valor}, '${bp.regla}')">${btnInfo.label}</button>`;
+                        }
+                    });
+                    buttonsHtml += `</div>`;
+                }
+
+                card.innerHTML = `
+                    <div class="practice-header">
+                        <span class="practice-title" style="color: ${bp.cumple ? '#00e676' : '#ffb300'}">${bp.regla}</span>
+                        <span class="badge ${bp.cumple ? 'badge-success' : 'badge-warning'}">
+                            ${bp.cumple ? 'Cumple' : bp.prioridad.toUpperCase()}
+                        </span>
+                    </div>
+                    <div class="practice-desc"><strong>Estado actual:</strong> ${bp.estado_actual}</div>
+                    ${!bp.cumple ? `<div class="practice-desc" style="color: white;"><strong>Recomendación:</strong> ${bp.recomendacion}</div>` : ''}
+                    ${buttonsHtml}
+                `;
+                practicesList.appendChild(card);
+            });
+        }
+
+        // Utilidad para deducir el tipo de red, nombre y parámetro para las peticiones de optimización o reversión para todas las redes afectadas
+        function generarBotonesOptimizacion(bp, configuraciones, revertir = false) {
+            const r = bp.regla.toLowerCase();
+            const est = bp.estado_actual.toLowerCase();
+            const list = [];
+
+            // 1. Fast Roaming
+            if (r.includes("roaming") || r.includes("fast roaming")) {
+                configuraciones.redes_wifi.forEach(w => {
+                    if ((revertir && w.fast_roaming) || (!revertir && !w.fast_roaming)) {
+                        list.push({
+                            tipo: 'wifi',
+                            nombre_red: w.ssid,
+                            parametro: 'fast_roaming',
+                            valor: revertir ? false : true,
+                            label: `${revertir ? '↩ Quitar Roaming' : '⚡ Activar Roaming'} en '${w.ssid}'`
+                        });
+                    }
+                });
+            }
+
+            // 2. Seguridad WPA3
+            else if (r.includes("wpa3") || r.includes("seguridad")) {
+                configuraciones.redes_wifi.forEach(w => {
+                    if ((revertir && w.wpa3) || (!revertir && !w.wpa3)) {
+                        list.push({
+                            tipo: 'wifi',
+                            nombre_red: w.ssid,
+                            parametro: 'wpa3',
+                            valor: revertir ? false : true,
+                            label: `${revertir ? '↩ Quitar WPA3' : '⚡ Activar WPA3'} en '${w.ssid}'`
+                        });
+                    }
+                });
+            }
+
+            // 3. Multicast WLAN (WiFi)
+            else if (r.includes("multicast") && (r.includes("wlan") || r.includes("wifi"))) {
+                configuraciones.redes_wifi.forEach(w => {
+                    if ((revertir && w.enhancement_multicast) || (!revertir && !w.enhancement_multicast)) {
+                        list.push({
+                            tipo: 'wifi',
+                            nombre_red: w.ssid,
+                            parametro: 'multicast_enhance',
+                            valor: revertir ? false : true,
+                            label: `${revertir ? '↩ Desactivar Multicast' : '⚡ Activar Multicast'} en WiFi '${w.ssid}'`
+                        });
+                    }
+                });
+            }
+
+            // 4. IGMP Snooping LAN (Redes cableadas)
+            else if (r.includes("igmp") || r.includes("snooping") || r.includes("multicast")) {
+                configuraciones.redes_lan.forEach(l => {
+                    // Ignorar la red WAN por defecto para IGMP snooping
+                    if (l.nombre.toLowerCase().includes("wan")) return;
+                    if ((revertir && l.igmp_snooping) || (!revertir && !l.igmp_snooping)) {
+                        if (est.includes(l.nombre.toLowerCase()) || est.includes("todas") || est.includes("generalizada")) {
+                            list.push({
+                                tipo: 'lan',
+                                nombre_red: l.nombre,
+                                parametro: 'igmp_snooping',
+                                valor: revertir ? false : true,
+                                label: `${revertir ? '↩ Desactivar IGMP' : '⚡ Activar IGMP'} en LAN '${l.nombre}'`
+                            });
+                        }
+                    }
+                });
+            }
+
+            // 5. UPnP LAN
+            else if (r.includes("upnp")) {
+                configuraciones.redes_lan.forEach(l => {
+                    if ((revertir && !l.upnp) || (!revertir && l.upnp)) {
+                        list.push({
+                            tipo: 'lan',
+                            nombre_red: l.nombre,
+                            parametro: 'upnp',
+                            valor: revertir ? true : false,
+                            label: `${revertir ? '↩ Activar UPnP' : '⚡ Desactivar UPnP'} en LAN '${l.nombre}'`
+                        });
+                    }
+                });
+            }
+
+            return list;
+        }
+
+        // Confirmar reinicio (Human-in-the-Loop)
+        function confirmarReinicio(mac, nombre) {
+            modalTitle.innerText = "🔄 Confirmar Reinicio de Dispositivo";
+            modalBody.innerHTML = `Estás a punto de reiniciar el dispositivo de red <strong>'${nombre}'</strong> (${mac}).<br><br>Esta acción interrumpirá la conexión de los clientes conectados a este dispositivo durante unos minutos. ¿Deseas continuar?`;
+            btnModalConfirm.className = "btn-confirm";
+            
+            confirmModal.classList.add('active');
+            
+            modalConfirmCallback = async () => {
+                mostrarLoader("Reiniciando dispositivo...", "Enviando comando al controlador...");
+                try {
+                    const response = await fetch('/api/reiniciar', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ mac: mac, nombre: nombre })
+                    });
+                    const data = await response.json();
+                    
+                    if (response.ok && data.status === 'success') {
+                        alert(data.message);
+                    } else {
+                        alert(`Error al reiniciar: ${data.detail || 'Fallo desconocido'}`);
+                    }
+                } catch (err) {
+                    alert(`Error de red: ${err.message}`);
+                } finally {
+                    ocultarLoader();
+                }
+            };
+        }
+
+        // Confirmar Optimización de Configuración (Human-in-the-Loop)
+        function confirmarOptimizacion(tipo, nombreRed, parametro, valor, regla) {
+            modalTitle.innerText = "⚡ Confirmar Optimización de Configuración";
+            modalBody.innerHTML = `Estás a punto de aplicar el siguiente cambio de configuración en tu red:<br><br>
+            • <strong>Regla:</strong> ${regla}<br>
+            • <strong>Objetivo:</strong> Red ${tipo.toUpperCase()} '${nombreRed}'<br>
+            • <strong>Parámetro:</strong> ${parametro} -> <strong>${valor}</strong><br><br>
+            El controlador reaplicará esta configuración de forma inmediata. ¿Deseas aplicar esta optimización?`;
+            
+            btnModalConfirm.className = "btn-confirm opt-mode";
+            confirmModal.classList.add('active');
+
+            modalConfirmCallback = async () => {
+                mostrarLoader("Aplicando optimización...", "Reescribiendo configuración local en el controlador...");
+                try {
+                    const response = await fetch('/api/optimizar', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            tipo_red: tipo,
+                            nombre_red: nombreRed,
+                            parametro: parametro,
+                            valor: valor
+                        })
+                    });
+                    const data = await response.json();
+                    
+                    if (response.ok && data.status === 'success') {
+                        alert(data.message);
+                        btnDiagnose.click(); // Recargar diagnóstico para refrescar el dashboard
+                    } else {
+                        alert(`Error al optimizar: ${data.detail || 'Fallo desconocido'}`);
+                    }
+                } catch (err) {
+                    alert(`Error de red: ${err.message}`);
+                } finally {
+                    ocultarLoader();
+                }
+            };
+        }
+
+        // Confirmar Reversión de Configuración (Human-in-the-Loop)
+        function confirmarReversion(tipo, nombreRed, parametro, valor, regla) {
+            modalTitle.innerText = "↩ Confirmar Reversión de Configuración";
+            modalBody.innerHTML = `Estás a punto de deshacer el cambio de configuración anterior en tu red:<br><br>
+            • <strong>Regla:</strong> ${regla}<br>
+            • <strong>Objetivo:</strong> Red ${tipo.toUpperCase()} '${nombreRed}'<br>
+            • <strong>Parámetro:</strong> ${parametro} -> <strong>${valor}</strong><br><br>
+            Esto restablecerá el parámetro a su estado anterior o desactivará la sugerencia de la IA. ¿Deseas deshacer este cambio?`;
+            
+            btnModalConfirm.className = "btn-confirm";
+            confirmModal.classList.add('active');
+
+            modalConfirmCallback = async () => {
+                mostrarLoader("Revirtiendo cambio...", "Reescribiendo configuración original en el controlador...");
+                try {
+                    const response = await fetch('/api/optimizar', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            tipo_red: tipo,
+                            nombre_red: nombreRed,
+                            parametro: parametro,
+                            valor: valor
+                        })
+                    });
+                    const data = await response.json();
+                    
+                    if (response.ok && data.status === 'success') {
+                        alert("Cambio deshecho y revertido con éxito.");
+                        btnDiagnose.click(); // Recargar diagnóstico para refrescar el dashboard
+                    } else {
+                        alert(`Error al revertir: ${data.detail || 'Fallo desconocido'}`);
+                    }
+                } catch (err) {
+                    alert(`Error de red: ${err.message}`);
+                } finally {
+                    ocultarLoader();
+                }
+            };
+        }
+    </script>
+</body>
+</html>
