@@ -590,6 +590,9 @@
        FRONTEND LOGIC (VANILLA JS)
        ============================================================================ -->
     <script>
+        // API Key inyectada desde el backend (Jinja2 template)
+        const API_KEY = "{{ api_key }}";
+
         // Elementos del DOM
         const btnDiagnose = document.getElementById('btn-diagnose');
         const kpiDevices = document.getElementById('kpi-devices');
@@ -626,7 +629,10 @@
             mostrarLoader("Conectando al controlador UniFi...", "Recopilando métricas y configuraciones de red...");
             
             try {
-                const response = await fetch('/api/diagnosticar', { method: 'POST' });
+                const response = await fetch('/api/diagnosticar', {
+                    method: 'POST',
+                    headers: { 'X-API-Key': API_KEY }
+                });
                 const data = await response.json();
                 
                 if (response.ok && data.status === 'success') {
@@ -694,21 +700,27 @@
                 
                 const card = document.createElement('div');
                 card.className = 'history-item';
-                card.innerHTML = `
-                    <div>
-                        <div class="history-date">${dateStr}</div>
-                        <div style="font-size: 0.82rem; color: var(--text-muted); margin-top: 0.2rem;">
-                            Usuarios: ${item.num_usuarios} · Alertas: ${item.num_problemas}
-                        </div>
-                    </div>
-                    <span class="badge ${item.num_problemas === 0 ? 'badge-success' : 'badge-warning'}">
-                        ${item.num_problemas === 0 ? 'Estable' : item.num_problemas + ' Alertas'}
-                    </span>
-                `;
+
+                const divInfo = document.createElement('div');
+                const dateDiv = document.createElement('div');
+                dateDiv.className = 'history-date';
+                dateDiv.textContent = dateStr;
+                const detailDiv = document.createElement('div');
+                detailDiv.style.cssText = 'font-size: 0.82rem; color: var(--text-muted); margin-top: 0.2rem;';
+                detailDiv.textContent = `Usuarios: ${item.num_usuarios} · Alertas: ${item.num_problemas}`;
+                divInfo.appendChild(dateDiv);
+                divInfo.appendChild(detailDiv);
+
+                const badge = document.createElement('span');
+                badge.className = `badge ${item.num_problemas === 0 ? 'badge-success' : 'badge-warning'}`;
+                badge.textContent = item.num_problemas === 0 ? 'Estable' : item.num_problemas + ' Alertas';
+
+                card.appendChild(divInfo);
+                card.appendChild(badge);
                 
                 // Si es el primer elemento (el más reciente), actualizar cabecera del sistema
                 if (index === 0) {
-                    systemInfo.innerHTML = `Controlador UniFi OS · Última auditoría realizada`;
+                    systemInfo.textContent = 'Controlador UniFi OS · Última auditoría realizada';
                 }
 
                 historyList.appendChild(card);
@@ -721,20 +733,34 @@
             const diagnostico = data.diagnostico;
 
             // 1. Configurar KPIs
-            kpiDevices.innerText = metricas.length;
-            kpiUsers.innerText = metricas.reduce((acc, curr) => acc + curr.num_usuarios, 0);
-            kpiAlerts.innerText = diagnostico.problemas_detectados.length;
+            kpiDevices.textContent = metricas.length;
+            kpiUsers.textContent = metricas.reduce((acc, curr) => acc + curr.num_usuarios, 0);
+            kpiAlerts.textContent = diagnostico.problemas_detectados.length;
 
-            // 2. Renderizar Resumen General
-            aiSummary.innerHTML = `
-                <p style="margin-bottom: 1rem; font-weight: 500; color: white;">${diagnostico.resumen_general}</p>
-                <div style="margin-top: 1rem;">
-                    <strong style="color: var(--warning); display: block; margin-bottom: 0.5rem;">Alertas detectadas:</strong>
-                    ${diagnostico.problemas_detectados.map(p => `• ${p}<br>`).join('') || 'Ninguna alerta activa.'}
-                </div>
-            `;
+            // 2. Renderizar Resumen General (sanitizado)
+            aiSummary.innerHTML = '';
+            const resumenP = document.createElement('p');
+            resumenP.style.cssText = 'margin-bottom: 1rem; font-weight: 500; color: white;';
+            resumenP.textContent = diagnostico.resumen_general;
+            aiSummary.appendChild(resumenP);
 
-            // 3. Renderizar Tabla de Dispositivos
+            if (diagnostico.problemas_detectados.length > 0) {
+                const alertasDiv = document.createElement('div');
+                alertasDiv.style.marginTop = '1rem';
+                const alertasStrong = document.createElement('strong');
+                alertasStrong.style.cssText = 'color: var(--warning); display: block; margin-bottom: 0.5rem;';
+                alertasStrong.textContent = 'Alertas detectadas:';
+                alertasDiv.appendChild(alertasStrong);
+                diagnostico.problemas_detectados.forEach(p => {
+                    const linea = document.createElement('span');
+                    linea.textContent = '• ' + p;
+                    linea.style.display = 'block';
+                    alertasDiv.appendChild(linea);
+                });
+                aiSummary.appendChild(alertasDiv);
+            }
+
+            // 3. Renderizar Tabla de Dispositivos (sanitizado)
             devicesTbody.innerHTML = '';
             metricas.forEach(dev => {
                 const tr = document.createElement('tr');
@@ -759,22 +785,59 @@
                     a => a.mac === dev.mac && a.accion.toLowerCase() === 'reiniciar'
                 );
 
-                const actionButton = sugeridoReboot
-                    ? `<button class="btn-action" onclick="confirmarReinicio('${dev.mac}', '${dev.nombre}')">🔄 Reiniciar</button>`
-                    : `<span style="font-size: 0.9rem; color: var(--text-muted);">Sin acción</span>`;
+                // Celdas con textContent (sin innerHTML)
+                const tdNombre = document.createElement('td');
+                tdNombre.style.fontWeight = '600';
+                tdNombre.style.color = 'white';
+                tdNombre.appendChild(document.createTextNode(dev.nombre + ' '));
+                const spanModelo = document.createElement('span');
+                spanModelo.style.cssText = 'font-size: 0.8rem; color: var(--text-muted); font-weight: 400;';
+                spanModelo.textContent = dev.modelo + ' · ' + dev.mac;
+                tdNombre.appendChild(spanModelo);
 
-                tr.innerHTML = `
-                    <td style="font-weight: 600; color: white;">${dev.nombre} <br><span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 400;">${dev.modelo} · ${dev.mac}</span></td>
-                    <td>${dev.tipo}</td>
-                    <td><span class="badge ${statusClass}">${dev.estado}</span></td>
-                    <td><span class="badge ${satClass}">${satText}</span></td>
-                    <td style="font-weight: 500;">${dev.num_usuarios}</td>
-                    <td>${actionButton}</td>
-                `;
+                const tdTipo = document.createElement('td');
+                tdTipo.textContent = dev.tipo;
+
+                const tdEstado = document.createElement('td');
+                const badgeEstado = document.createElement('span');
+                badgeEstado.className = `badge ${statusClass}`;
+                badgeEstado.textContent = dev.estado;
+                tdEstado.appendChild(badgeEstado);
+
+                const tdSat = document.createElement('td');
+                const badgeSat = document.createElement('span');
+                badgeSat.className = `badge ${satClass}`;
+                badgeSat.textContent = satText;
+                tdSat.appendChild(badgeSat);
+
+                const tdUsers = document.createElement('td');
+                tdUsers.style.fontWeight = '500';
+                tdUsers.textContent = dev.num_usuarios;
+
+                const tdAction = document.createElement('td');
+                if (sugeridoReboot) {
+                    const btn = document.createElement('button');
+                    btn.className = 'btn-action';
+                    btn.textContent = '🔄 Reiniciar';
+                    btn.addEventListener('click', () => confirmarReinicio(dev.mac, dev.nombre));
+                    tdAction.appendChild(btn);
+                } else {
+                    const sinAccion = document.createElement('span');
+                    sinAccion.style.cssText = 'font-size: 0.9rem; color: var(--text-muted);';
+                    sinAccion.textContent = 'Sin acción';
+                    tdAction.appendChild(sinAccion);
+                }
+
+                tr.appendChild(tdNombre);
+                tr.appendChild(tdTipo);
+                tr.appendChild(tdEstado);
+                tr.appendChild(tdSat);
+                tr.appendChild(tdUsers);
+                tr.appendChild(tdAction);
                 devicesTbody.appendChild(tr);
             });
 
-            // 4. Renderizar Auditoría de Mejores Prácticas
+            // 4. Renderizar Auditoría de Mejores Prácticas (sanitizado)
             practicesList.innerHTML = '';
             if (!diagnostico.mejores_practicas || diagnostico.mejores_practicas.length === 0) {
                 practicesList.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 1rem 0;">¡Excelente! La configuración cumple al 100% las mejores prácticas.</div>`;
@@ -788,30 +851,73 @@
                 // Generar los botones dinámicos según todas las redes afectadas
                 const listButtons = generarBotonesOptimizacion(bp, data.configuraciones, bp.cumple);
 
-                let buttonsHtml = '';
-                if (listButtons.length > 0) {
-                    buttonsHtml = `<div style="display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 0.8rem;">`;
-                    listButtons.forEach(btnInfo => {
-                        if (!bp.cumple) {
-                            buttonsHtml += `<button class="btn-optimize" style="font-size: 0.82rem; padding: 0.4rem 0.9rem;" onclick="confirmarOptimizacion('${btnInfo.tipo}', '${btnInfo.nombre_red}', '${btnInfo.parametro}', ${btnInfo.valor}, '${bp.regla}')">${btnInfo.label}</button>`;
-                        } else {
-                            buttonsHtml += `<button class="btn-cancel" style="font-size: 0.8rem; padding: 0.35rem 0.8rem; border-color: rgba(255, 255, 255, 0.12); color: var(--text-muted);" onclick="confirmarReversion('${btnInfo.tipo}', '${btnInfo.nombre_red}', '${btnInfo.parametro}', ${btnInfo.valor}, '${bp.regla}')">${btnInfo.label}</button>`;
-                        }
-                    });
-                    buttonsHtml += `</div>`;
+                // Header
+                const header = document.createElement('div');
+                header.className = 'practice-header';
+                const title = document.createElement('span');
+                title.className = 'practice-title';
+                title.style.color = bp.cumple ? '#00e676' : '#ffb300';
+                title.textContent = bp.regla;
+                const badge = document.createElement('span');
+                badge.className = `badge ${bp.cumple ? 'badge-success' : 'badge-warning'}`;
+                badge.textContent = bp.cumple ? 'Cumple' : bp.prioridad.toUpperCase();
+                header.appendChild(title);
+                header.appendChild(badge);
+                card.appendChild(header);
+
+                // Estado actual
+                const descEstado = document.createElement('div');
+                descEstado.className = 'practice-desc';
+                const strongEstado = document.createElement('strong');
+                strongEstado.textContent = 'Estado actual: ';
+                descEstado.appendChild(strongEstado);
+                descEstado.appendChild(document.createTextNode(bp.estado_actual));
+                card.appendChild(descEstado);
+
+                // Recomendación (solo si no cumple)
+                if (!bp.cumple) {
+                    const descRec = document.createElement('div');
+                    descRec.className = 'practice-desc';
+                    descRec.style.color = 'white';
+                    const strongRec = document.createElement('strong');
+                    strongRec.textContent = 'Recomendación: ';
+                    descRec.appendChild(strongRec);
+                    descRec.appendChild(document.createTextNode(bp.recomendacion));
+                    card.appendChild(descRec);
                 }
 
-                card.innerHTML = `
-                    <div class="practice-header">
-                        <span class="practice-title" style="color: ${bp.cumple ? '#00e676' : '#ffb300'}">${bp.regla}</span>
-                        <span class="badge ${bp.cumple ? 'badge-success' : 'badge-warning'}">
-                            ${bp.cumple ? 'Cumple' : bp.prioridad.toUpperCase()}
-                        </span>
-                    </div>
-                    <div class="practice-desc"><strong>Estado actual:</strong> ${bp.estado_actual}</div>
-                    ${!bp.cumple ? `<div class="practice-desc" style="color: white;"><strong>Recomendación:</strong> ${bp.recomendacion}</div>` : ''}
-                    ${buttonsHtml}
-                `;
+                // Botones
+                if (listButtons.length > 0) {
+                    const btnContainer = document.createElement('div');
+                    btnContainer.style.cssText = 'display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 0.8rem;';
+                    listButtons.forEach(btnInfo => {
+                        const btn = document.createElement('button');
+                        if (!bp.cumple) {
+                            btn.className = 'btn-optimize';
+                            btn.style.cssText = 'font-size: 0.82rem; padding: 0.4rem 0.9rem;';
+                            btn.textContent = btnInfo.label;
+                            const capturedTipo = btnInfo.tipo;
+                            const capturedNombre = btnInfo.nombre_red;
+                            const capturedParam = btnInfo.parametro;
+                            const capturedValor = btnInfo.valor;
+                            const capturedRegla = bp.regla;
+                            btn.addEventListener('click', () => confirmarOptimizacion(capturedTipo, capturedNombre, capturedParam, capturedValor, capturedRegla));
+                        } else {
+                            btn.className = 'btn-cancel';
+                            btn.style.cssText = 'font-size: 0.8rem; padding: 0.35rem 0.8rem; border-color: rgba(255, 255, 255, 0.12); color: var(--text-muted);';
+                            btn.textContent = btnInfo.label;
+                            const capturedTipo = btnInfo.tipo;
+                            const capturedNombre = btnInfo.nombre_red;
+                            const capturedParam = btnInfo.parametro;
+                            const capturedValor = btnInfo.valor;
+                            const capturedRegla = bp.regla;
+                            btn.addEventListener('click', () => confirmarReversion(capturedTipo, capturedNombre, capturedParam, capturedValor, capturedRegla));
+                        }
+                        btnContainer.appendChild(btn);
+                    });
+                    card.appendChild(btnContainer);
+                }
+
                 practicesList.appendChild(card);
             });
         }
@@ -907,7 +1013,18 @@
         // Confirmar reinicio (Human-in-the-Loop)
         function confirmarReinicio(mac, nombre) {
             modalTitle.innerText = "🔄 Confirmar Reinicio de Dispositivo";
-            modalBody.innerHTML = `Estás a punto de reiniciar el dispositivo de red <strong>'${nombre}'</strong> (${mac}).<br><br>Esta acción interrumpirá la conexión de los clientes conectados a este dispositivo durante unos minutos. ¿Deseas continuar?`;
+            modalBody.innerHTML = '';
+            const p1 = document.createTextNode(`Estás a punto de reiniciar el dispositivo de red `);
+            const strong1 = document.createElement('strong');
+            strong1.textContent = `'${nombre}'`;
+            const p2 = document.createTextNode(` (${mac}).`);
+            const p3 = document.createTextNode(` Esta acción interrumpirá la conexión de los clientes conectados a este dispositivo durante unos minutos. ¿Deseas continuar?`);
+            modalBody.appendChild(p1);
+            modalBody.appendChild(strong1);
+            modalBody.appendChild(p2);
+            modalBody.appendChild(document.createElement('br'));
+            modalBody.appendChild(document.createElement('br'));
+            modalBody.appendChild(p3);
             btnModalConfirm.className = "btn-confirm";
             
             confirmModal.classList.add('active');
@@ -917,7 +1034,10 @@
                 try {
                     const response = await fetch('/api/reiniciar', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-API-Key': API_KEY
+                        },
                         body: JSON.stringify({ mac: mac, nombre: nombre })
                     });
                     const data = await response.json();
@@ -938,11 +1058,30 @@
         // Confirmar Optimización de Configuración (Human-in-the-Loop)
         function confirmarOptimizacion(tipo, nombreRed, parametro, valor, regla) {
             modalTitle.innerText = "⚡ Confirmar Optimización de Configuración";
-            modalBody.innerHTML = `Estás a punto de aplicar el siguiente cambio de configuración en tu red:<br><br>
-            • <strong>Regla:</strong> ${regla}<br>
-            • <strong>Objetivo:</strong> Red ${tipo.toUpperCase()} '${nombreRed}'<br>
-            • <strong>Parámetro:</strong> ${parametro} -> <strong>${valor}</strong><br><br>
-            El controlador reaplicará esta configuración de forma inmediata. ¿Deseas aplicar esta optimización?`;
+            modalBody.innerHTML = '';
+            modalBody.appendChild(document.createTextNode('Estás a punto de aplicar el siguiente cambio de configuración en tu red:'));
+            modalBody.appendChild(document.createElement('br'));
+            modalBody.appendChild(document.createElement('br'));
+            const items = [
+                { label: 'Regla: ', value: regla },
+                { label: 'Objetivo: ', value: `Red ${tipo.toUpperCase()} '${nombreRed}'` },
+                { label: 'Parámetro: ', value: `${parametro} -> ` },
+            ];
+            items.forEach(item => {
+                const li = document.createTextNode('• ');
+                const strong = document.createElement('strong');
+                strong.textContent = item.label;
+                modalBody.appendChild(li);
+                modalBody.appendChild(strong);
+                modalBody.appendChild(document.createTextNode(item.value));
+                modalBody.appendChild(document.createElement('br'));
+            });
+            const strongValor = document.createElement('strong');
+            strongValor.textContent = valor;
+            modalBody.lastChild.previousSibling.appendChild(strongValor);
+            modalBody.appendChild(document.createElement('br'));
+            modalBody.appendChild(document.createElement('br'));
+            modalBody.appendChild(document.createTextNode('El controlador reaplicará esta configuración de forma inmediata. ¿Deseas aplicar esta optimización?'));
             
             btnModalConfirm.className = "btn-confirm opt-mode";
             confirmModal.classList.add('active');
@@ -952,7 +1091,10 @@
                 try {
                     const response = await fetch('/api/optimizar', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-API-Key': API_KEY
+                        },
                         body: JSON.stringify({
                             tipo_red: tipo,
                             nombre_red: nombreRed,
@@ -979,11 +1121,30 @@
         // Confirmar Reversión de Configuración (Human-in-the-Loop)
         function confirmarReversion(tipo, nombreRed, parametro, valor, regla) {
             modalTitle.innerText = "↩ Confirmar Reversión de Configuración";
-            modalBody.innerHTML = `Estás a punto de deshacer el cambio de configuración anterior en tu red:<br><br>
-            • <strong>Regla:</strong> ${regla}<br>
-            • <strong>Objetivo:</strong> Red ${tipo.toUpperCase()} '${nombreRed}'<br>
-            • <strong>Parámetro:</strong> ${parametro} -> <strong>${valor}</strong><br><br>
-            Esto restablecerá el parámetro a su estado anterior o desactivará la sugerencia de la IA. ¿Deseas deshacer este cambio?`;
+            modalBody.innerHTML = '';
+            modalBody.appendChild(document.createTextNode('Estás a punto de deshacer el cambio de configuración anterior en tu red:'));
+            modalBody.appendChild(document.createElement('br'));
+            modalBody.appendChild(document.createElement('br'));
+            const itemsRev = [
+                { label: 'Regla: ', value: regla },
+                { label: 'Objetivo: ', value: `Red ${tipo.toUpperCase()} '${nombreRed}'` },
+                { label: 'Parámetro: ', value: `${parametro} -> ` },
+            ];
+            itemsRev.forEach(item => {
+                const li = document.createTextNode('• ');
+                const strong = document.createElement('strong');
+                strong.textContent = item.label;
+                modalBody.appendChild(li);
+                modalBody.appendChild(strong);
+                modalBody.appendChild(document.createTextNode(item.value));
+                modalBody.appendChild(document.createElement('br'));
+            });
+            const strongValorRev = document.createElement('strong');
+            strongValorRev.textContent = valor;
+            modalBody.lastChild.previousSibling.appendChild(strongValorRev);
+            modalBody.appendChild(document.createElement('br'));
+            modalBody.appendChild(document.createElement('br'));
+            modalBody.appendChild(document.createTextNode('Esto restablecerá el parámetro a su estado anterior o desactivará la sugerencia de la IA. ¿Deseas deshacer este cambio?'));
             
             btnModalConfirm.className = "btn-confirm";
             confirmModal.classList.add('active');
@@ -993,7 +1154,10 @@
                 try {
                     const response = await fetch('/api/optimizar', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-API-Key': API_KEY
+                        },
                         body: JSON.stringify({
                             tipo_red: tipo,
                             nombre_red: nombreRed,

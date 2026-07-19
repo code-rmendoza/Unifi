@@ -14,6 +14,12 @@ venv/
 .vscode/
 .idea/
 
-# Database and logs
+# Database, logs y backups
 *.db
 *.log
+backups/
+
+# Testing
+.pytest_cache/
+htmlcov/
+.coverage

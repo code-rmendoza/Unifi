@@ -1,0 +1,44 @@
+# Credenciales
+.env
+
+# Entorno virtual
+.venv/
+venv/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+
+# Base de datos y logs (se generan en runtime)
+*.db
+*.log
+
+# Git
+.git/
+
+# IDE
+.vscode/
+.idea/
+
+# Tests
+.pytest_cache/
+htmlcov/
+.coverage
+
+# Archivos raíz antiguos (ya no se usan)
+config.py
+models.py
+utils.py
+unifi_client.py
+ai_analyzer.py
+routes.py
+cli.py
+main.py
+pytest.ini
+
+# Docker
+Dockerfile
+.dockerignore

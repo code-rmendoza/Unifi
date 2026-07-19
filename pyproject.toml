@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=75.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "unifi-network-ai-agent"
+version = "1.0.0"
+description = "Agente de IA para optimización de red UniFi — diagnóstico inteligente con Gemini AI y Human-in-the-Loop"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+authors = [
+    {name = "Diego Linares"}
+]
+
+dependencies = [
+    "requests==2.34.2",
+    "python-dotenv==1.2.2",
+    "google-genai==2.12.0",
+    "pydantic==2.13.4",
+    "urllib3==2.7.0",
+    "fastapi==0.139.1",
+    "uvicorn==0.51.0",
+    "jinja2==3.1.6",
+    "slowapi==0.1.10",
+    "prometheus-client==0.22.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==8.4.1",
+    "httpx==0.28.1",
+]
+
+[project.scripts]
+unifi-agent = "unifi_agent.cli:main"
+unifi-web = "unifi_agent.app:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
